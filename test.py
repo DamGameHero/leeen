@@ -41,6 +41,30 @@ def theta1_calc(theta0, theta1, lRate, xScaled, data):
     return theta1 - (lRate / m) * (np.sum(np.multiply(np.subtract(hypothesis, targetVar), xScaled)))
 
 
+def ssr(theta0, theta1, xScaled, data):
+    hypothesis = np.add(theta0, np.multiply(theta1, xScaled))
+    targetVar = data['price']
+    return np.sum(np.power(np.subtract(hypothesis, targetVar), 2))
+
+
+def sst(data):
+    yAverage = np.average(data['price'])
+    targetVar = data['price']
+    return np.sum(np.power(np.subtract(yAverage, targetVar), 2))
+
+
+def results_generation(theta0, theta1, data, turn, costs):
+    try:
+        np.savetxt("thetas.csv", [[theta0, theta1]], delimiter=',')
+    except Exception as e:
+        print("Can't open thetas.csv")
+        print(e.__doc__)
+    plt.plot(data['km'], data['price'], "ro")
+    plt.plot(data['km'], np.add(np.multiply(theta1, data['km']), theta0))
+    # plt.plot(np.arange(turn + 1), costs)
+    plt.show()
+
+
 if __name__ == '__main__':
     # Vairables Initialization
     turn = 0
@@ -74,21 +98,17 @@ if __name__ == '__main__':
         tmp_cost = new_cost
         turn += 1
 
-    # print("size = ", data.size)
-    # print("xAverage = ", xAverage)
-    # print("xRange = ", xRange)
-    # print("turn = ", turn)
+    r_squared = 1 - (ssr(theta0, theta1, xScaled, data) / sst(data))
     tmp_theta0 = theta0
     tmp_theta1 = theta1
     theta0 = tmp_theta0 + tmp_theta1 * ((-1 * xAverage) / xRange)
     theta1 = tmp_theta0 + tmp_theta1 * ((1 - xAverage) / xRange) - theta0
-    # print("theta0 = ", theta0, "\ntheta1f =", theta1)
-    try:
-        np.savetxt("thetas.csv", [[theta0, theta1]], delimiter=',')
-    except Exception as e:
-        print("Can't open thetas.csv")
-        print(e.__doc__)
-    plt.plot(data['km'], data['price'], "ro")
-    plt.plot(data['km'], np.add(np.multiply(theta1, data['km']), theta0))
-    # plt.plot(np.arange(turn + 1), costs)
-    plt.show()
+    print("Number of turn to perform gradient descent = ", turn)
+    print("Sample size = ", data.size)
+    print("X Average = ", xAverage)
+    print("X Range = ", xRange)
+    print("Y Average = ", np.average(data['price']))
+    print("Y Range = ", np.amax(data['price']) - np.amin(data['price']))
+    print("theta0 = ", theta0, "\ntheta1 =", theta1)
+    print("Coefficient of determination R2 = ", r_squared, "\n(R2 varies between 0 and 1. Close to 0, the predictive power of the model is weak. Close to 1, the predictive power of the model is strong.)")
+    results_generation(theta0, theta1, data, turn, costs)
