@@ -20,44 +20,44 @@ def get_data(args):
 
 # speed up gradient descent
 def feature_scaling(xAverage, xRange, data):
-    return np.divide(np.subtract(data['km'], xAverage), xRange)
+    return (data['km'] - xAverage) / xRange
 
 
 def cost(theta0, theta1, xScaled, data):
     m = data.size
-    hypothesis = np.add(theta0, np.multiply(theta1, xScaled))
+    hypothesis = theta0 + theta1 * xScaled
     targetVar = data['price']
-    return (1 / (2 * m)) * np.sum(np.power(np.subtract(hypothesis, targetVar), 2))
+    return 1 / (2 * m) * np.sum(np.power((hypothesis - targetVar), 2))
 
 
 # theta0 derivative of cost()
 def theta0_calc(theta0, theta1, lRate, xScaled, data):
     m = data.size
-    hypothesis = np.add(theta0, np.multiply(theta1, xScaled))
+    hypothesis = theta0 + theta1 * xScaled
     targetVar = data['price']
-    return theta0 - (lRate / m) * (np.sum(np.subtract(hypothesis, targetVar)))
+    return theta0 - (lRate / m) * (np.sum((hypothesis - targetVar)))
 
 
 # theta1 derivative of cost()
 def theta1_calc(theta0, theta1, lRate, xScaled, data):
     m = data.size
-    hypothesis = np.add(theta0, np.multiply(theta1, xScaled))
+    hypothesis = theta0 + theta1 * xScaled
     targetVar = data['price']
-    return theta1 - (lRate / m) * (np.sum(np.multiply(np.subtract(hypothesis, targetVar), xScaled)))
+    return theta1 - (lRate / m) * (np.sum((hypothesis - targetVar) * xScaled))
 
 
 # Sum of Squares Explained
 def ssr(theta0, theta1, xScaled, data):
-    hypothesis = np.add(theta0, np.multiply(theta1, xScaled))
+    hypothesis = theta0 + theta1 * xScaled
     targetVar = data['price']
-    return np.sum(np.power(np.subtract(hypothesis, targetVar), 2))
+    return np.sum(np.power(hypothesis - targetVar, 2))
 
 
 # Sum of Squares Total
 def sst(data):
     yAverage = np.average(data['price'])
     targetVar = data['price']
-    return np.sum(np.power(np.subtract(yAverage, targetVar), 2))
+    return np.sum(np.power(yAverage - targetVar, 2))
 
 
 def results_generation(theta0, theta1, data, turn, costs):
@@ -130,5 +130,6 @@ if __name__ == '__main__':
     print("Y Average = ", np.average(data['price']))
     print("Y Range = ", np.amax(data['price']) - np.amin(data['price']))
     print("theta0 = ", theta0, "\ntheta1 =", theta1)
-    print("Coefficient of determination R2 = ", r_squared, "\n(R2 varies between 0 and 1. Close to 0, the predictive power of the model is weak. Close to 1, the predictive power of the model is strong.)")
+    print("Coefficient of determination R2 = ", r_squared)
+    print("(R2 varies between 0 and 1. Close to 0, the predictive power of the model is weak. Close to 1, the predictive power of the model is strong.)")
     results_generation(theta0, theta1, data, turn, costs)
