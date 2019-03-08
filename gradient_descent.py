@@ -131,5 +131,8 @@ if __name__ == '__main__':
     print("Y Range = ", np.amax(data['price']) - np.amin(data['price']))
     print("theta0 = ", theta0, "\ntheta1 =", theta1)
     print("Coefficient of determination R2 = ", r_squared)
-    print("(R2 varies between 0 and 1. Close to 0, the predictive power of the model is weak. Close to 1, the predictive power of the model is strong.)")
+    print(
+            "(R2 varies between 0 and 1. Close to 0, the predictive power of "
+            "the model is weak. Close to 1, "
+            "the predictive power of the model is strong.)")
     results_generation(theta0, theta1, data, turn, costs)
