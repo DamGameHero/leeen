@@ -23,46 +23,41 @@ def feature_scaling(xAverage, xRange, data):
     return (data['km'] - xAverage) / xRange
 
 
-def cost(theta0, theta1, xScaled, data):
-    m = data.size
-    hypothesis = theta0 + theta1 * xScaled
-    targetVar = data['price']
-    return 1 / (2 * m) * np.sum(np.power((hypothesis - targetVar), 2))
+def cost(theta0, theta1, x, y, xStats):
+    m = xStats['xSize']
+    hypothesis = theta0 + theta1 * x
+    return 1 / (2 * m) * np.sum(np.power((hypothesis - y), 2))
 
 
 # theta0 derivative of cost()
-def theta0_calc(theta0, theta1, lRate, xScaled, data):
-    m = data.size
-    hypothesis = theta0 + theta1 * xScaled
-    targetVar = data['price']
-    return theta0 - (lRate / m) * (np.sum((hypothesis - targetVar)))
+def theta0_calc(theta0, theta1, lRate, x, y, xStats):
+    m = xStats['xSize']
+    hypothesis = theta0 + theta1 * x
+    return theta0 - (lRate / m) * (np.sum((hypothesis - y)))
 
 
 # theta1 derivative of cost()
-def theta1_calc(theta0, theta1, lRate, xScaled, data):
-    m = data.size
-    hypothesis = theta0 + theta1 * xScaled
-    targetVar = data['price']
-    return theta1 - (lRate / m) * (np.sum((hypothesis - targetVar) * xScaled))
+def theta1_calc(theta0, theta1, lRate, x, y, xStats):
+    m = xStats['xSize']
+    hypothesis = theta0 + theta1 * x
+    return theta1 - (lRate / m) * (np.sum((hypothesis - y) * x))
 
 
 # Sum of Squares Explained
-def ssr(theta0, theta1, xScaled, data):
-    hypothesis = theta0 + theta1 * xScaled
-    targetVar = data['price']
-    return np.sum(np.power(hypothesis - targetVar, 2))
+def ssr(theta0, theta1, x, y, xStats):
+    hypothesis = theta0 + theta1 * x
+    return np.sum(np.power(hypothesis - y, 2))
 
 
 # Sum of Squares Total
-def sst(data):
-    yAverage = np.average(data['price'])
-    targetVar = data['price']
-    return np.sum(np.power(yAverage - targetVar, 2))
+def sst(y):
+    yAverage = np.average(y)
+    return np.sum(np.power(yAverage - y, 2))
 
 
-def results_generation(theta0, theta1, data, turn, costs):
+def results_generation(results, data):
     try:
-        np.savetxt("thetas.csv", [[theta0, theta1]], delimiter=',')
+        np.savetxt("thetas.csv", [[results['theta0'], results['theta1']]], delimiter=',')
     except Exception as e:
         print("Can't open thetas.csv")
         print(e.__doc__)
@@ -75,13 +70,13 @@ def results_generation(theta0, theta1, data, turn, costs):
     plt.xlabel('No. of iterations')
     plt.ylabel('Cost Function')
     plt.title('Data Visualization')
-    plt.plot(np.arange(turn + 1), costs)
+    plt.plot(np.arange(results['turns'] + 1), results['costs'])
     plt.figure(1)
     plt.xlabel('Mileage (km)')
     plt.ylabel('Price (euros)')
     plt.title('Linear Regression')
     plt.plot(data['km'], data['price'], "r+")
-    plt.plot(data['km'], np.add(np.multiply(theta1, data['km']), theta0))
+    plt.plot(data['km'], np.add(np.multiply(results['theta1'], data['km']), results['theta0']))
     plt.show()
 
 
@@ -90,15 +85,17 @@ def data_preprocessing(data):
     xStats['xMax'] = np.amax(data['km'])
     xStats['xMin'] = np.amin(data['km'])
     xStats['xRange'] = xStats['xMax'] - xStats['xMin']
+    xStats['xSize'] = data.size
     xScaled = feature_scaling(xStats['xAverage'], xStats['xRange'], data)
-    return xStats, xScaled
+    y = data['price']
+    return xScaled, y, xStats
 
 
-def r_squared_calc(theta0, theta1, xScaled, data):
-    return 1 - (ssr(theta0, theta1, xScaled, data) / sst(data))
+def r_squared_calc(theta0, theta1, x, y, xStats):
+    return 1 - (ssr(theta0, theta1, x, y, xStats) / sst(y))
 
 
-def gradient_descent(data, xStats, xScaled):
+def gradient_descent(x, y, xStats):
 
     # Vairables Initialization
     turn = 0
@@ -109,22 +106,22 @@ def gradient_descent(data, xStats, xScaled):
     costs = []
     tmp_cost = 0
     new_cost = 0
-    tmp_cost = cost(theta0, theta1, xScaled, data)
+    tmp_cost = cost(theta0, theta1, x, y, xStats)
     costs.append(tmp_cost)
 
     # Gradient Descent Processing
     while converge > 0.00000001:
         tmp_theta0 = theta0
         tmp_theta1 = theta1
-        theta0 = theta0_calc(tmp_theta0, tmp_theta1, lRate, xScaled, data)
-        theta1 = theta1_calc(tmp_theta0, tmp_theta1, lRate, xScaled, data)
-        new_cost = cost(theta0, theta1, xScaled, data)
+        theta0 = theta0_calc(tmp_theta0, tmp_theta1, lRate, x, y, xStats)
+        theta1 = theta1_calc(tmp_theta0, tmp_theta1, lRate, x, y, xStats)
+        new_cost = cost(theta0, theta1, x, y, xStats)
         costs.append(new_cost)
         converge = np.abs(tmp_cost - new_cost)
         tmp_cost = new_cost
         turn += 1
 
-    r_squared = r_squared_calc(theta0, theta1, xScaled, data)
+    r_squared = r_squared_calc(theta0, theta1, x, y, xStats)
     tmp_theta0 = theta0
     tmp_theta1 = theta1
     theta0 = (
@@ -134,37 +131,45 @@ def gradient_descent(data, xStats, xScaled):
             tmp_theta0
             + tmp_theta1 * ((1 - xStats['xAverage']) / xStats['xRange'])
             - theta0)
-    return turn, costs, theta0, theta1, r_squared
+    results = {'turns': turn}
+    results['costs'] = costs
+    results['theta0'] = theta0
+    results['theta1'] = theta1
+    results['r_squared'] = r_squared
+    return results
 
 
-def display_results(theta0, theta1, turns, xStats, r_squared):
-    print("Number of iterations to perform gradient descent = ", turns)
-    print("Sample size = ", data.size)
+def display_results(results, xStats, y):
+    print("Number of iterations to perform gradient descent = ", results['turns'])
+    print("Sample size = ", xStats['xSize'])
     print("X Average = ", xStats['xAverage'])
     print("X Range = ", xStats['xRange'])
-    print("Y Average = ", np.average(data['price']))
-    print("Y Range = ", np.amax(data['price']) - np.amin(data['price']))
-    print("theta0 = ", theta0, "\ntheta1 =", theta1)
-    print("Coefficient of determination R2 = ", r_squared)
+    print("Y Average = ", np.average(y))
+    print("Y Range = ", np.amax(y) - np.amin(y))
+    print("theta0 = ", results['theta0'], "\ntheta1 =", results['theta1'])
+    print("Coefficient of determination R2 = ", results['r_squared'])
     print(
             "(R2 varies between 0 and 1. Close to 0, the predictive power of "
             "the model is weak. Close to 1, "
             "the predictive power of the model is strong.)")
 
 
-if __name__ == '__main__':
+def main():
     # Get Data
     data = get_data(sys.argv)
 
     # Data Preprocessing
-    xStats, xScaled = data_preprocessing(data)
+    x, y, xStats = data_preprocessing(data)
 
     # Gradient Descent Process
-    turns, costs, theta0, theta1, r_squared = (
-            gradient_descent(data, xStats, xScaled))
+    results = gradient_descent(x, y, xStats)
 
     # Displaying Results
-    display_results(theta0, theta1, turns, xStats, r_squared)
+    display_results(results, xStats, y)
 
     # Results Generation
-    results_generation(theta0, theta1, data, turns, costs)
+    results_generation(results, data)
+
+
+if __name__ == '__main__':
+    main()
