@@ -85,7 +85,21 @@ def results_generation(theta0, theta1, data, turn, costs):
     plt.show()
 
 
-if __name__ == '__main__':
+def data_preprocessing(data):
+    xStats = {'xAverage': np.average(data['km'])}
+    xStats['xMax'] = np.amax(data['km'])
+    xStats['xMin'] = np.amin(data['km'])
+    xStats['xRange'] = xStats['xMax'] - xStats['xMin']
+    xScaled = feature_scaling(xStats['xAverage'], xStats['xRange'], data)
+    return xStats, xScaled
+
+
+def r_squared_calc(theta0, theta1, xScaled, data):
+    return 1 - (ssr(theta0, theta1, xScaled, data) / sst(data))
+
+
+def gradient_descent(data, xStats, xScaled):
+
     # Vairables Initialization
     turn = 0
     theta0 = 0.0
@@ -95,18 +109,10 @@ if __name__ == '__main__':
     costs = []
     tmp_cost = 0
     new_cost = 0
-
-    # Data Preprocessing
-    data = get_data(sys.argv)
-    xAverage = np.average(data['km'])
-    xMax = np.amax(data['km'])
-    xMin = np.amin(data['km'])
-    xRange = xMax - xMin
-    xScaled = feature_scaling(xAverage, xRange, data)
     tmp_cost = cost(theta0, theta1, xScaled, data)
     costs.append(tmp_cost)
 
-    # Gradient Descent
+    # Gradient Descent Processing
     while converge > 0.00000001:
         tmp_theta0 = theta0
         tmp_theta1 = theta1
@@ -118,15 +124,24 @@ if __name__ == '__main__':
         tmp_cost = new_cost
         turn += 1
 
-    r_squared = 1 - (ssr(theta0, theta1, xScaled, data) / sst(data))
+    r_squared = r_squared_calc(theta0, theta1, xScaled, data)
     tmp_theta0 = theta0
     tmp_theta1 = theta1
-    theta0 = tmp_theta0 + tmp_theta1 * ((-1 * xAverage) / xRange)
-    theta1 = tmp_theta0 + tmp_theta1 * ((1 - xAverage) / xRange) - theta0
-    print("Number of iterations to perform gradient descent = ", turn)
+    theta0 = (
+            tmp_theta0
+            + tmp_theta1 * ((-1 * xStats['xAverage']) / xStats['xRange']))
+    theta1 = (
+            tmp_theta0
+            + tmp_theta1 * ((1 - xStats['xAverage']) / xStats['xRange'])
+            - theta0)
+    return turn, costs, theta0, theta1, r_squared
+
+
+def display_results(theta0, theta1, turns, xStats, r_squared):
+    print("Number of iterations to perform gradient descent = ", turns)
     print("Sample size = ", data.size)
-    print("X Average = ", xAverage)
-    print("X Range = ", xRange)
+    print("X Average = ", xStats['xAverage'])
+    print("X Range = ", xStats['xRange'])
     print("Y Average = ", np.average(data['price']))
     print("Y Range = ", np.amax(data['price']) - np.amin(data['price']))
     print("theta0 = ", theta0, "\ntheta1 =", theta1)
@@ -135,4 +150,21 @@ if __name__ == '__main__':
             "(R2 varies between 0 and 1. Close to 0, the predictive power of "
             "the model is weak. Close to 1, "
             "the predictive power of the model is strong.)")
-    results_generation(theta0, theta1, data, turn, costs)
+
+
+if __name__ == '__main__':
+    # Get Data
+    data = get_data(sys.argv)
+
+    # Data Preprocessing
+    xStats, xScaled = data_preprocessing(data)
+
+    # Gradient Descent Process
+    turns, costs, theta0, theta1, r_squared = (
+            gradient_descent(data, xStats, xScaled))
+
+    # Displaying Results
+    display_results(theta0, theta1, turns, xStats, r_squared)
+
+    # Results Generation
+    results_generation(theta0, theta1, data, turns, costs)
