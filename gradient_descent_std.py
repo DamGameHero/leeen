@@ -27,14 +27,14 @@ def data_preprocessing(data):
     xStats['xVar'] = (
             1 / (xStats['xSize'] - 1) * np.sum(np.power(data['km'] - xStats['xAverage'], 2)))
     xStats['xStd'] = np.sqrt(xStats['xVar'])
-    xScaled = feature_scaling(xStats['xAverage'], xStats['xRange'], data)
+    xScaled = feature_scaling(xStats['xAverage'], xStats['xStd'], data)
     y = data['price']
     return xScaled, y, xStats
 
 
 # speed up gradient descent
-def feature_scaling(xAverage, xRange, data):
-    return (data['km'] - xAverage) / xRange
+def feature_scaling(xAverage, xStd, data):
+    return (data['km'] - xAverage) / xStd
 
 
 def cost(theta0, theta1, x, y, xStats):
@@ -158,10 +158,10 @@ def gradient_descent(x, y, xStats):
     tmp_theta1 = theta1
     theta0 = (
             tmp_theta0
-            + tmp_theta1 * ((-1 * xStats['xAverage']) / xStats['xRange']))
+            + tmp_theta1 * ((-1 * xStats['xAverage']) / xStats['xStd']))
     theta1 = (
             tmp_theta0
-            + tmp_theta1 * ((1 - xStats['xAverage']) / xStats['xRange'])
+            + tmp_theta1 * ((1 - xStats['xAverage']) / xStats['xStd'])
             - theta0)
     results = {'turns': turn}
     results['costs'] = costs
