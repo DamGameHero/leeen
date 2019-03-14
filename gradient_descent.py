@@ -25,7 +25,8 @@ def data_preprocessing(data):
     xStats['xRange'] = xStats['xMax'] - xStats['xMin']
     xStats['xSize'] = data.size
     xStats['xVar'] = (
-            1 / (xStats['xSize'] - 1) * np.sum(np.power(data['km'] - xStats['xAverage'], 2)))
+            1 / (xStats['xSize'] - 1)
+            * np.sum(np.power(data['km'] - xStats['xAverage'], 2)))
     xStats['xStd'] = np.sqrt(xStats['xVar'])
     xScaled = feature_scaling(xStats['xAverage'], xStats['xRange'], data)
     y = data['price']
@@ -58,7 +59,7 @@ def theta1_calc(theta0, theta1, lRate, x, y, xStats):
 
 
 # Sum of Squares Explained
-def ssr(theta0, theta1, x, y, xStats):
+def ssr(theta0, theta1, x, y):
     hypothesis = theta0 + theta1 * x
     return np.sum(np.power(hypothesis - y, 2))
 
@@ -69,8 +70,8 @@ def sst(y):
     return np.sum(np.power(yAverage - y, 2))
 
 
-def r_squared_calc(theta0, theta1, x, y, xStats):
-    return 1 - (ssr(theta0, theta1, x, y, xStats) / sst(y))
+def r_squared_calc(theta0, theta1, x, y):
+    return 1 - (ssr(theta0, theta1, x, y) / sst(y))
 
 
 def display_results(results, xStats, y):
@@ -153,7 +154,7 @@ def gradient_descent(x, y, xStats):
         turn += 1
 
     # Results Calc
-    r_squared = r_squared_calc(theta0, theta1, x, y, xStats)
+    r_squared = r_squared_calc(theta0, theta1, x, y)
     tmp_theta0 = theta0
     tmp_theta1 = theta1
     theta0 = (
